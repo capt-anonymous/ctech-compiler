@@ -19,7 +19,7 @@ import {
 const loginSchema = z.object({
   regNumber: z.string()
     .min(1, "Registration number is required")
-    .regex(/^(RA|ra)/i, "Invalid reg no."),
+    .regex(/^(RA|ra)/i, "Invalid Registration number"),
   password: z.string().min(1, "Password is required"),
 });
 
