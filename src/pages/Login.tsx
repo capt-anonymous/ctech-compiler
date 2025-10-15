@@ -29,7 +29,6 @@ const Login = () => {
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    mode: "onSubmit",
     defaultValues: {
       regNumber: "",
       password: "",
