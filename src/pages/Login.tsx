@@ -1,39 +1,48 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, User } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+const loginSchema = z.object({
+  regNumber: z.string()
+    .min(1, "Registration number is required")
+    .regex(/^(RA|ra)/i, "Registration number must start with RA"),
+  password: z.string().min(1, "Password is required"),
+});
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [regNumber, setRegNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      regNumber: "",
+      password: "",
+    },
+  });
 
+  const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     // Simulate API call
     setTimeout(() => {
-      if (regNumber && password) {
-        toast({
-          title: "Login Successful",
-          description: "Redirecting to dashboard...",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid Registration Number or Password",
-          variant: "destructive",
-        });
-      }
-      setIsLoading(false);
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to dashboard...",
+      });
+      navigate("/dashboard");
     }, 1000);
   };
 
@@ -48,51 +57,63 @@ const Login = () => {
           <p className="text-muted-foreground">AI-Powered Examination Platform</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="regNumber" className="text-foreground">
-              Registration Number
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="regNumber"
-                type="text"
-                placeholder="Enter your registration number"
-                value={regNumber}
-                onChange={(e) => setRegNumber(e.target.value)}
-                className="pl-10 bg-input border-border text-foreground"
-                required
-              />
-            </div>
-          </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="regNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">
+                    Registration Number
+                  </FormLabel>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="Enter your registration number (e.g., RA12345)"
+                        className="pl-10 bg-input border-border text-foreground"
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-foreground">
-              Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 bg-input border-border text-foreground"
-                required
-              />
-            </div>
-          </div>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Password</FormLabel>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter your password"
+                        className="pl-10 bg-input border-border text-foreground"
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Button
-            type="submit"
-            className="w-full bg-gradient-primary hover:shadow-intense transition-all"
-            disabled={isLoading}
-          >
-            {isLoading ? "Logging in..." : "Log In"}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-primary hover:shadow-intense transition-all"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? "Logging in..." : "Log In"}
+            </Button>
+          </form>
+        </Form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
