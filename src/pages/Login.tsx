@@ -19,7 +19,7 @@ import {
 const loginSchema = z.object({
   regNumber: z.string()
     .min(1, "Registration number is required")
-    .regex(/^(RA|ra)/i, "Registration number must start with RA"),
+    .regex(/^(RA|ra)/i, "Invalid reg no."),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -72,7 +72,7 @@ const Login = () => {
                     <FormControl>
                       <Input
                         type="text"
-                        placeholder="Enter your registration number (e.g., RA12345)"
+                        placeholder="Enter your registration number"
                         className="pl-10 bg-input border-border text-foreground"
                         {...field}
                       />
