@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Code, Brain, Star, ArrowRight } from "lucide-react";
+import { Trophy, Code, Brain, Star, ArrowRight, Download } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 const Results = () => {
   const { testId } = useParams();
@@ -17,6 +18,36 @@ const Results = () => {
     totalPossible: 120,
     percentage: 85.83,
     submittedAt: new Date().toLocaleString(),
+  };
+
+  const handleExportToExcel = () => {
+    // Prepare data for Excel
+    const exportData = [
+      {
+        'Test ID': testId,
+        'Student Name': 'Student Name', // Replace with actual student name
+        'Coding Score': `${results.codingScore}/${results.codingTotal}`,
+        'Viva Score': `${results.vivaScore}/${results.vivaTotal}`,
+        'Total Score': `${results.totalScore}/${results.totalPossible}`,
+        'Percentage': `${results.percentage.toFixed(2)}%`,
+        'Status': 'Completed',
+        'Submitted At': results.submittedAt,
+      }
+    ];
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
+
+    // Auto-size columns
+    const maxWidth = exportData.reduce((w, r) => Math.max(w, Object.keys(r).length), 10);
+    worksheet['!cols'] = Array(maxWidth).fill({ wch: 20 });
+
+    // Download file
+    XLSX.writeFile(workbook, `Test_Results_${testId}_${new Date().getTime()}.xlsx`);
   };
 
   return (
@@ -122,6 +153,15 @@ const Results = () => {
         </Card>
 
         <div className="flex gap-4">
+          <Button
+            onClick={handleExportToExcel}
+            variant="outline"
+            className="flex-1"
+            size="lg"
+          >
+            <Download className="w-5 h-5 mr-2" />
+            Export to Excel
+          </Button>
           <Button
             onClick={() => navigate("/dashboard")}
             className="flex-1 bg-gradient-primary hover:shadow-glow"
