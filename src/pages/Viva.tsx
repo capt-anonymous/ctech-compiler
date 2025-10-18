@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, Send, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Viva = () => {
   const { testId } = useParams();
@@ -17,17 +18,27 @@ const Viva = () => {
 
   const generateVivaQuestion = async () => {
     setIsGenerating(true);
-    // Simulate AI question generation
-    setTimeout(() => {
-      setQuestion(
-        "Explain the time and space complexity of the solution you implemented for the Two Sum problem. How would you optimize it further if the array was sorted?"
-      );
-      setIsGenerating(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-viva-question', {
+        body: { topic: 'computer science' }
+      });
+
+      if (error) throw error;
+      setQuestion(data.question);
       toast({
         title: "Viva Question Generated",
         description: "AI has generated your personalized question",
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Error generating viva question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate viva question. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSubmit = async () => {

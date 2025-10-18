@@ -10,6 +10,7 @@ import QuestionPanel from "@/components/exam/QuestionPanel";
 import ExamTimer from "@/components/exam/ExamTimer";
 import FullscreenLock from "@/components/exam/FullscreenLock";
 import { AlertTriangle, Play, Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Exam = () => {
   const { testId } = useParams();
@@ -20,25 +21,12 @@ const Exam = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [output, setOutput] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState(45 * 60); // 45 minutes in seconds
-
-  // Mock question data
-  const question = {
-    title: "Two Sum Problem",
-    description: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
-
-You may assume that each input would have exactly one solution, and you may not use the same element twice.
-
-Example:
-Input: nums = [2,7,11,15], target = 9
-Output: [0,1]
-Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].`,
-    constraints: [
-      "2 <= nums.length <= 104",
-      "-109 <= nums[i] <= 109",
-      "-109 <= target <= 109",
-      "Only one valid answer exists.",
-    ],
-  };
+  const [question, setQuestion] = useState<{
+    title: string;
+    description: string;
+    constraints: string[];
+  } | null>(null);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(true);
 
   const languageTemplates = {
     java: `public class Solution {
@@ -70,6 +58,32 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
 # Write your shell script here
 `,
   };
+
+  // Fetch AI-generated question on component mount
+  useEffect(() => {
+    const fetchQuestion = async () => {
+      setIsLoadingQuestion(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-coding-question', {
+          body: { difficulty: 'medium', topic: 'algorithms' }
+        });
+
+        if (error) throw error;
+        setQuestion(data);
+      } catch (error) {
+        console.error('Error fetching question:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate coding question. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingQuestion(false);
+      }
+    };
+
+    fetchQuestion();
+  }, [toast]);
 
   useEffect(() => {
     if (selectedLanguage && languageTemplates[selectedLanguage as keyof typeof languageTemplates]) {
@@ -156,7 +170,18 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
             </Select>
           </div>
 
-          {selectedLanguage && (
+          {isLoadingQuestion ? (
+            <div className="flex items-center justify-center h-[calc(100vh-250px)]">
+              <Card className="p-8 bg-card border-border text-center">
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  Generating your coding challenge...
+                </h2>
+                <p className="text-muted-foreground">
+                  Please wait while AI creates a unique problem for you
+                </p>
+              </Card>
+            </div>
+          ) : selectedLanguage && question ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-200px)]">
               <QuestionPanel question={question} />
               <div className="flex flex-col gap-4">
@@ -193,9 +218,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
                 </div>
               </div>
             </div>
-          )}
-
-          {!selectedLanguage && (
+          ) : !isLoadingQuestion && !selectedLanguage && (
             <div className="flex items-center justify-center h-[calc(100vh-250px)]">
               <Card className="p-8 bg-card border-border text-center">
                 <h2 className="text-2xl font-semibold text-foreground mb-2">
