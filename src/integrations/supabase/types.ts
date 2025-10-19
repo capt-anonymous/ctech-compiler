@@ -14,16 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          register_number: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name: string
+          register_number?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          register_number?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      test_submissions: {
+        Row: {
+          coding_answer: string | null
+          coding_language: string | null
+          coding_question_constraints: string[] | null
+          coding_question_description: string
+          coding_question_title: string
+          coding_score: number | null
+          coding_total: number | null
+          created_at: string | null
+          graded_at: string | null
+          id: string
+          released_at: string | null
+          started_at: string | null
+          status: string | null
+          student_id: string
+          submitted_at: string | null
+          teacher_comments: string | null
+          teacher_id: string | null
+          updated_at: string | null
+          viva_answer: string | null
+          viva_question: string
+          viva_score: number | null
+          viva_total: number | null
+        }
+        Insert: {
+          coding_answer?: string | null
+          coding_language?: string | null
+          coding_question_constraints?: string[] | null
+          coding_question_description: string
+          coding_question_title: string
+          coding_score?: number | null
+          coding_total?: number | null
+          created_at?: string | null
+          graded_at?: string | null
+          id?: string
+          released_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          student_id: string
+          submitted_at?: string | null
+          teacher_comments?: string | null
+          teacher_id?: string | null
+          updated_at?: string | null
+          viva_answer?: string | null
+          viva_question: string
+          viva_score?: number | null
+          viva_total?: number | null
+        }
+        Update: {
+          coding_answer?: string | null
+          coding_language?: string | null
+          coding_question_constraints?: string[] | null
+          coding_question_description?: string
+          coding_question_title?: string
+          coding_score?: number | null
+          coding_total?: number | null
+          created_at?: string | null
+          graded_at?: string | null
+          id?: string
+          released_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          student_id?: string
+          submitted_at?: string | null
+          teacher_comments?: string | null
+          teacher_id?: string | null
+          updated_at?: string | null
+          viva_answer?: string | null
+          viva_question?: string
+          viva_score?: number | null
+          viva_total?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "student" | "teacher"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +272,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["student", "teacher"],
+    },
   },
 } as const
