@@ -129,7 +129,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
 
   return (
     <>
-      <FullscreenLock onForfeit={handleForfeit} />
+      {/*   <FullscreenLock onForfeit={handleForfeit} /> */}
       <div className="min-h-screen bg-background">
         <Alert className="rounded-none bg-destructive text-destructive-foreground border-destructive">
           <AlertTriangle className="h-4 w-4" />
