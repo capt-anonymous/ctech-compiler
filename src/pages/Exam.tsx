@@ -27,8 +27,6 @@ const Exam = () => {
     constraints: string[];
   } | null>(null);
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(true);
-  const [submissionId, setSubmissionId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
 
   const languageTemplates = {
     java: `public class Solution {
@@ -61,48 +59,22 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
 `,
   };
 
-  // Fetch AI-generated question and create submission on component mount
+  // Fetch AI-generated question on component mount
   useEffect(() => {
-    const initialize = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-      
-      setUserId(session.user.id);
+    const fetchQuestion = async () => {
       setIsLoadingQuestion(true);
-      
       try {
-        const { data: questionData, error: questionError } = await supabase.functions.invoke('generate-coding-question', {
+        const { data, error } = await supabase.functions.invoke('generate-coding-question', {
           body: { difficulty: 'medium', topic: 'algorithms' }
         });
 
-        if (questionError) throw questionError;
-        setQuestion(questionData);
-
-        // Create submission record
-        const { data: submission, error: submissionError } = await supabase
-          .from('test_submissions')
-          .insert({
-            student_id: session.user.id,
-            coding_question_title: questionData.title,
-            coding_question_description: questionData.description,
-            coding_question_constraints: questionData.constraints,
-            viva_question: '', // Will be filled later
-            status: 'in_progress'
-          })
-          .select()
-          .single();
-
-        if (submissionError) throw submissionError;
-        setSubmissionId(submission.id);
-        
+        if (error) throw error;
+        setQuestion(data);
       } catch (error) {
-        console.error('Error initializing exam:', error);
+        console.error('Error fetching question:', error);
         toast({
           title: "Error",
-          description: "Failed to initialize exam. Please refresh the page.",
+          description: "Failed to generate coding question. Please refresh the page.",
           variant: "destructive",
         });
       } finally {
@@ -110,8 +82,8 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
       }
     };
 
-    initialize();
-  }, [toast, navigate]);
+    fetchQuestion();
+  }, [toast]);
 
   useEffect(() => {
     if (selectedLanguage && languageTemplates[selectedLanguage as keyof typeof languageTemplates]) {
@@ -132,7 +104,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
     }, 2000);
   };
 
-  const handleSubmitCode = async () => {
+  const handleSubmitCode = () => {
     if (!code.trim()) {
       toast({
         title: "Cannot Submit",
@@ -141,35 +113,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize) {
       });
       return;
     }
-
-    if (!submissionId) {
-      toast({
-        title: "Error",
-        description: "Submission not initialized. Please refresh the page.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Save coding answer
-    const { error } = await supabase
-      .from('test_submissions')
-      .update({
-        coding_answer: code,
-        coding_language: selectedLanguage
-      })
-      .eq('id', submissionId);
-
-    if (error) {
-      toast({
-        title: "Error saving code",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    navigate(`/viva/${submissionId}`);
+    navigate(`/viva/${testId}`);
   };
 
   const handleForfeit = () => {

@@ -8,7 +8,7 @@ import { Brain, Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Viva = () => {
-  const { testId: submissionId } = useParams();
+  const { testId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -24,18 +24,7 @@ const Viva = () => {
       });
 
       if (error) throw error;
-      
-      const vivaQuestion = data.question;
-      setQuestion(vivaQuestion);
-
-      // Save viva question to submission
-      const { error: updateError } = await supabase
-        .from('test_submissions')
-        .update({ viva_question: vivaQuestion })
-        .eq('id', submissionId);
-
-      if (updateError) throw updateError;
-
+      setQuestion(data.question);
       toast({
         title: "Viva Question Generated",
         description: "AI has generated your personalized question",
@@ -63,35 +52,10 @@ const Viva = () => {
     }
 
     setIsSubmitting(true);
-
-    try {
-      // Save viva answer and mark as submitted
-      const { error } = await supabase
-        .from('test_submissions')
-        .update({
-          viva_answer: answer,
-          submitted_at: new Date().toISOString(),
-          status: 'submitted'
-        })
-        .eq('id', submissionId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Test Submitted",
-        description: "Your answers have been submitted for evaluation.",
-      });
-
-      navigate(`/results/${submissionId}`);
-    } catch (error) {
-      console.error('Error submitting test:', error);
-      toast({
-        title: "Submission Error",
-        description: "Failed to submit test. Please try again.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-    }
+    // Simulate AI grading
+    setTimeout(() => {
+      navigate(`/results/${testId}`);
+    }, 2000);
   };
 
   return (
@@ -102,7 +66,7 @@ const Viva = () => {
             <Brain className="w-8 h-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">AI-Powered Viva Voce</h1>
-              <p className="text-sm text-muted-foreground">Oral Examination • Submission ID: {submissionId}</p>
+              <p className="text-sm text-muted-foreground">Oral Examination • Test ID: {testId}</p>
             </div>
           </div>
         </div>

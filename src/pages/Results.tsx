@@ -1,126 +1,61 @@
-import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trophy, Code, Brain, Star, ArrowRight, Download } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 
-interface SubmissionData {
-  coding_score: number;
-  coding_total: number;
-  viva_score: number;
-  viva_total: number;
-  submitted_at: string | null;
-  status: string;
-  profiles: {
-    name: string;
-    register_number: string | null;
-  };
-}
-
 const Results = () => {
-  const { testId: submissionId } = useParams();
+  const { testId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [submission, setSubmission] = useState<SubmissionData | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSubmission();
-  }, []);
-
-  const loadSubmission = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("test_submissions")
-      .select(`
-        *,
-        profiles:student_id (name, register_number)
-      `)
-      .eq("id", submissionId)
-      .single();
-
-    if (error) {
-      toast({
-        title: "Error loading results",
-        description: error.message,
-        variant: "destructive",
-      });
-      navigate("/dashboard");
-    } else if (data) {
-      // Check if student can view results
-      if (data.student_id !== session.user.id && data.status !== "released") {
-        toast({
-          title: "Results not released",
-          description: "Your results are being evaluated by your teacher.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-      setSubmission(data as any);
-    }
-
-    setLoading(false);
+  // Mock results data
+  const results = {
+    codingScore: 85,
+    codingTotal: 100,
+    vivaScore: 18,
+    vivaTotal: 20,
+    totalScore: 103,
+    totalPossible: 120,
+    percentage: 85.83,
+    submittedAt: new Date().toLocaleString(),
   };
 
   const handleExportToExcel = () => {
-    if (!submission) return;
-
-    const totalScore = submission.coding_score + submission.viva_score;
-    const totalPossible = submission.coding_total + submission.viva_total;
-    const percentage = ((totalScore / totalPossible) * 100).toFixed(2);
-
+    // Prepare data for Excel
     const exportData = [
       {
-        'Submission ID': submissionId,
-        'Student Name': submission.profiles.name,
-        'Register Number': submission.profiles.register_number || 'N/A',
-        'Coding Score': `${submission.coding_score}/${submission.coding_total}`,
-        'Viva Score': `${submission.viva_score}/${submission.viva_total}`,
-        'Total Score': `${totalScore}/${totalPossible}`,
-        'Percentage': `${percentage}%`,
-        'Status': submission.status.charAt(0).toUpperCase() + submission.status.slice(1),
-        'Submitted At': submission.submitted_at ? new Date(submission.submitted_at).toLocaleString() : 'N/A',
+        'Test ID': testId,
+        'Student Name': 'Student Name', // Replace with actual student name
+        'Coding Score': `${results.codingScore}/${results.codingTotal}`,
+        'Viva Score': `${results.vivaScore}/${results.vivaTotal}`,
+        'Total Score': `${results.totalScore}/${results.totalPossible}`,
+        'Percentage': `${results.percentage.toFixed(2)}%`,
+        'Status': 'Completed',
+        'Submitted At': results.submittedAt,
       }
     ];
 
+    // Create worksheet
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Create workbook
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
 
-    worksheet['!cols'] = Array(9).fill({ wch: 20 });
+    // Auto-size columns
+    const maxWidth = exportData.reduce((w, r) => Math.max(w, Object.keys(r).length), 10);
+    worksheet['!cols'] = Array(maxWidth).fill({ wch: 20 });
 
-    XLSX.writeFile(workbook, `My_Test_Results_${new Date().getTime()}.xlsx`);
+    // Download file
+    XLSX.writeFile(workbook, `Test_Results_${testId}_${new Date().getTime()}.xlsx`);
   };
-
-  if (loading || !submission) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground">Loading results...</div>
-      </div>
-    );
-  }
-
-  const totalScore = submission.coding_score + submission.viva_score;
-  const totalPossible = submission.coding_total + submission.viva_total;
-  const percentage = ((totalScore / totalPossible) * 100).toFixed(2);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-2xl font-bold text-foreground">Test Results</h1>
-          <p className="text-sm text-muted-foreground">
-            {submission.profiles.name} {submission.profiles.register_number && `(${submission.profiles.register_number})`}
-          </p>
+          <p className="text-sm text-muted-foreground">Test ID: {testId}</p>
         </div>
       </header>
 
@@ -149,13 +84,13 @@ const Results = () => {
               </div>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-foreground">{submission.coding_score}</span>
-              <span className="text-xl text-muted-foreground">/ {submission.coding_total}</span>
+              <span className="text-4xl font-bold text-foreground">{results.codingScore}</span>
+              <span className="text-xl text-muted-foreground">/ {results.codingTotal}</span>
             </div>
             <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-primary"
-                style={{ width: `${(submission.coding_score / submission.coding_total) * 100}%` }}
+                style={{ width: `${(results.codingScore / results.codingTotal) * 100}%` }}
               />
             </div>
           </Card>
@@ -171,13 +106,13 @@ const Results = () => {
               </div>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-foreground">{submission.viva_score}</span>
-              <span className="text-xl text-muted-foreground">/ {submission.viva_total}</span>
+              <span className="text-4xl font-bold text-foreground">{results.vivaScore}</span>
+              <span className="text-xl text-muted-foreground">/ {results.vivaTotal}</span>
             </div>
             <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-accent"
-                style={{ width: `${(submission.viva_score / submission.viva_total) * 100}%` }}
+                style={{ width: `${(results.vivaScore / results.vivaTotal) * 100}%` }}
               />
             </div>
           </Card>
@@ -188,11 +123,11 @@ const Results = () => {
             <div>
               <p className="text-sm opacity-90 mb-1">Total Score</p>
               <div className="flex items-baseline gap-3">
-                <span className="text-5xl font-bold">{totalScore}</span>
-                <span className="text-2xl opacity-75">/ {totalPossible}</span>
+                <span className="text-5xl font-bold">{results.totalScore}</span>
+                <span className="text-2xl opacity-75">/ {results.totalPossible}</span>
               </div>
               <p className="text-lg mt-2 opacity-90">
-                Percentage: <strong>{percentage}%</strong>
+                Percentage: <strong>{results.percentage.toFixed(2)}%</strong>
               </p>
             </div>
             <Star className="w-16 h-16 opacity-20" />
@@ -204,19 +139,15 @@ const Results = () => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Submitted At:</span>
-              <span className="text-foreground font-medium">
-                {submission.submitted_at ? new Date(submission.submitted_at).toLocaleString() : 'N/A'}
-              </span>
+              <span className="text-foreground font-medium">{results.submittedAt}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Submission ID:</span>
-              <span className="text-foreground font-medium">{submissionId}</span>
+              <span className="text-muted-foreground">Test ID:</span>
+              <span className="text-foreground font-medium">{testId}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Status:</span>
-              <span className="text-accent font-medium">
-                {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
-              </span>
+              <span className="text-accent font-medium">Completed</span>
             </div>
           </div>
         </Card>
